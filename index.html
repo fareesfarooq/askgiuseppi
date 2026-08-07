@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<!--
+  Ask Giuseppi: an unofficial, non-commercial fan project inspired by
+  "The Sims: Bustin' Out" (EA / Maxis). NOT affiliated with, endorsed by, or
+  sponsored by Electronic Arts or Maxis. All trademarks and original character
+  concepts belong to their respective owners. Built for personal / educational
+  purposes only, not for distribution or commercial use. See README.md.
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ask Giuseppi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue1: #335fd8;
+      --blue2: #2344b4;
+      --blue3: #1a2e86;
+      --blue4: #88aafc;
+      --ink: #07132f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #120018;
+      padding: 12px;
+      overflow: hidden;
+    }
+
+    #screen {
+      width: 640px;
+      height: 480px;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      cursor: pointer;
+      box-shadow: 0 0 0 4px #1a237e, 0 10px 32px rgba(0, 0, 0, .72);
+      image-rendering: pixelated;
+    }
+
+    #bg {
+      position: absolute;
+      inset: 0;
+      background-color: #6d1f88;
+      background-image: url("sprites/bgtile.png");
+      background-repeat: repeat;
+      background-size: auto;
+      image-rendering: pixelated;
+      z-index: 0;
+      animation: bgtile-scroll 6s linear infinite;
+    }
+
+    @keyframes bgtile-scroll {
+      from { background-position: 0 0; }
+      to   { background-position: -166px 168px; }
+    }
+
+    #bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(88, 0, 120, .20), rgba(30, 0, 40, .25));
+      pointer-events: none;
+    }
+
+    #nametag {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 21;
+      background: linear-gradient(180deg, #4477ee 0%, #1a44bb 100%);
+      border: 3px solid #ffffff;
+      border-radius: 8px;
+      padding: 7px 14px 8px;
+      box-shadow: 3px 4px 0 rgba(0,0,0,.55), inset 0 2px 0 rgba(255,255,255,.25);
+    }
+
+    #nametag span {
+      color: #fff;
+      font: 700 14px/1.2 'Comic Sans MS', 'Comic Sans', cursive;
+      text-shadow: 2px 2px 0 #06124f;
+      letter-spacing: 0.5px;
+    }
+
+    #stats {
+      position: absolute;
+      top: 30px;
+      right: 8px;
+      z-index: 22;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .meter-outer {
+      width: 14px;
+      height: 130px;
+      border: 2px solid #cce;
+      border-radius: 3px;
+      background: #111;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px #000, 2px 3px 0 rgba(0,0,0,.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    /* red fixed top half */
+    .meter-outer::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50%;
+      background: #cc1111;
+    }
+
+    /* green dynamic fill from bottom */
+    #meter-fill {
+      position: relative;
+      width: 100%;
+      height: 50%;
+      background: #22cc55;
+      transition: height .4s ease, background .4s ease;
+      z-index: 1;
+    }
+
+    #snum {
+      color: #fff;
+      font: 700 12px/1 'Comic Sans MS', 'Comic Sans', cursive;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    #char-wrap {
+      position: absolute;
+      right: 0px;
+      bottom: 135px;
+      width: 354px;
+      height: 336px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    #char-sprite {
+      width: 354px;
+      height: 336px;
+      object-fit: fill;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(-4px 6px 0 rgba(0,0,0,.52));
+      transition: opacity .08s ease;
+      opacity: 1;
+    }
+
+    #bubble {
+      position: absolute;
+      top: 72px;
+      left: 8px;
+      width: 330px;
+      min-height: 160px;
+      background: linear-gradient(180deg, #5599ff 0%, #2255dd 100%);
+      border: 3px solid #aaccff;
+      border-radius: 16px;
+      padding: 14px 16px 40px;
+      z-index: 16;
+      box-shadow: 4px 5px 0 rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.3);
+    }
+
+    #btxt {
+      color: #fff;
+      font: 700 15px/1.6 'Comic Sans MS', 'Comic Sans', cursive;
+      text-shadow: 1px 1px 0 #0d1a4a;
+      min-height: 100px;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .cur {
+      display: inline-block;
+      width: 6px;
+      height: 12px;
+      background: #fff;
+      margin-left: 1px;
+      vertical-align: -1px;
+      animation: cblink .55s step-end infinite;
+    }
+
+    @keyframes cblink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    #pbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 160px;
+      background: linear-gradient(180deg, #2a4fcc 0%, #1a3399 100%);
+      border-top: 4px solid #6699ff;
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.18);
+      z-index: 20;
+      display: flex;
+      align-items: stretch;
+    }
+
+    #pframe {
+      width: 100px;
+      background: linear-gradient(180deg, #1a3aaa 0%, #0d2070 100%);
+      border-right: 4px solid #4466cc;
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #pframe::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 14px;
+      background: repeating-linear-gradient(180deg, #2244cc 0, #0a1f88 6px, #2244cc 6px);
+      border-right: 2px solid #3355cc;
+    }
+
+    #pface {
+      width: 74px;
+      height: 74px;
+      margin-left: 10px;
+      border-radius: 6px;
+      border: 3px solid #7799dd;
+      overflow: hidden;
+      background: #1a2a66;
+      box-shadow: 0 2px 4px rgba(0,0,0,.5);
+      flex-shrink: 0;
+    }
+
+    #pface img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    #ptxt-wrap {
+      flex: 1;
+      margin: 8px 10px 8px 6px;
+      background: #06060e;
+      border: 3px solid #223388;
+      border-radius: 4px;
+      box-shadow: inset 0 3px 12px rgba(0,0,0,.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    #ai-input-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 8px 4px;
+      flex-shrink: 0;
+    }
+
+    #ai-input {
+      flex: 1;
+      background: #0a0a18;
+      border: 2px solid #334499;
+      border-radius: 4px;
+      color: #eebb00;
+      font: 700 13px/1.4 'Comic Sans MS', 'Comic Sans', cursive;
+      padding: 6px 10px;
+      outline: none;
+      min-width: 0;
+      text-shadow: none;
+    }
+
+    #ai-input::placeholder {
+      color: #445566;
+      font-weight: 400;
+    }
+
+    #ai-input:focus {
+      border-color: #6688cc;
+    }
+
+    #ai-send {
+      background: linear-gradient(180deg, #3355cc, #1a2e88);
+      border: 2px solid #6688ff;
+      border-radius: 4px;
+      color: #fff;
+      font: 900 13px/1 'Comic Sans MS', 'Comic Sans', cursive;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: filter .1s;
+    }
+
+    #ai-send:hover { filter: brightness(1.2); }
+    #ai-send:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+    #ptxt {
+      padding: 4px 12px 6px;
+      color: #eebb00;
+      font: 700 13px/1.5 'Comic Sans MS', 'Comic Sans', cursive;
+      text-shadow: 1px 1px 0 #000;
+      white-space: pre-wrap;
+      flex-shrink: 0;
+      min-height: 0;
+    }
+
+    #startscr,
+    #file-proto-warn {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 0, 18, .94);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      z-index: 50;
+      text-align: center;
+    }
+
+    #startscr h1 {
+      color: #fff;
+      font: 400 14px/1.6 'Press Start 2P', monospace;
+      text-shadow: 3px 3px 0 #3b0764, 0 0 24px rgba(180, 100, 255, .5);
+      max-width: 92%;
+      padding: 0 8px;
+    }
+
+    #startscr h1 em {
+      display: block;
+      margin-top: 10px;
+      color: #e9d5ff;
+      font-style: normal;
+      font-size: 11px;
+    }
+
+    #startscr p,
+    #file-proto-warn p {
+      color: #cfc3ff;
+      font: 400 7px/1.55 'Press Start 2P', monospace;
+      max-width: 90%;
+    }
+
+    #key-help {
+      color: #9a8fd0;
+      font-size: 6px;
+      line-height: 1.6;
+    }
+
+    #key-input {
+      width: 78%;
+      max-width: 380px;
+      background: #0a0a18;
+      border: 2px solid #334499;
+      border-radius: 6px;
+      color: #eebb00;
+      font: 400 8px/1.4 'Press Start 2P', monospace;
+      padding: 10px 12px;
+      outline: none;
+      text-align: center;
+    }
+
+    #key-input:focus { border-color: #6688cc; }
+    #key-input::placeholder { color: #445566; }
+
+    #startbtn,
+    #file-proto-dismiss {
+      background: linear-gradient(180deg, #3d5cff, #2438b8);
+      border: 4px solid #a6bfff;
+      border-radius: 8px;
+      color: #fff;
+      font: 400 11px/1 'Press Start 2P', monospace;
+      padding: 14px 28px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 rgba(0, 0, 0, .4), inset 0 2px 0 rgba(255, 255, 255, .2);
+      animation: sp 1.3s ease-in-out infinite alternate;
+    }
+
+    @keyframes sp {
+      from {
+        filter: brightness(1)
+      }
+
+      to {
+        filter: brightness(1.12)
+      }
+    }
+
+    #file-proto-warn {
+      display: none;
+      gap: 14px;
+      z-index: 100;
+    }
+
+    #file-proto-warn h2 {
+      font: 400 22px/1.2 'Press Start 2P', monospace;
+      color: #cc88ff;
+    }
+
+    #file-proto-warn code {
+      background: #1a1030;
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: #aaf;
+    }
+
+    /* ── Floating mood signs ── */
+    .mood-pop {
+      position: absolute;
+      left: 50%;
+      top: 175px;
+      transform: translateX(-50%);
+      font: 900 22px/1 'Comic Sans MS', 'Comic Sans', cursive;
+      pointer-events: none;
+      z-index: 55;
+      animation: mood-float 1.2s ease-out forwards;
+      text-shadow: 2px 2px 0 #000, 0 0 8px rgba(0,0,0,.8);
+    }
+    .mood-pop.pos { color: #44ff88; }
+    .mood-pop.neg { color: #ff4444; }
+    @keyframes mood-float {
+      0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.3); }
+      40%  { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-70px) scale(0.8); }
+    }
+
+    /* ── Screen shake ── */
+    @keyframes shake {
+      0%,100% { transform: translate(0,0); }
+      20%      { transform: translate(-4px, 2px); }
+      40%      { transform: translate(4px, -2px); }
+      60%      { transform: translate(-3px, 3px); }
+      80%      { transform: translate(3px, -1px); }
+    }
+    #screen.shaking { animation: shake 0.35s ease; }
+
+    /* ── Positive pulse on bubble ── */
+    @keyframes happypulse {
+      0%,100% { box-shadow: 4px 5px 0 rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.3); }
+      50%      { box-shadow: 4px 5px 0 rgba(0,0,0,.45), 0 0 18px 4px rgba(80,255,140,.55), inset 0 2px 0 rgba(255,255,255,.3); }
+    }
+    #bubble.happy-flash { animation: happypulse 0.5s ease; }
+
+    /* ── A button ── */
+    #abtn {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 35%, #ff6666, #cc1111);
+      border: 2px solid #ff9999;
+      color: #fff;
+      font: 900 13px/1 'Comic Sans MS','Comic Sans',cursive;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 0 rgba(0,0,0,.5);
+      pointer-events: none;
+      z-index: 17;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    #abtn.visible { opacity: 1; }
+    @keyframes abtn-pulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.15); }
+    }
+    #abtn.visible { animation: abtn-pulse .5s ease-in-out infinite; }
+  </style>
+</head>
+
+<body>
+
+  <div id="file-proto-warn">
+    <h2>Opened as a local file</h2>
+    <p>Some browsers mute audio for <code>file://</code> pages.</p>
+    <p>Keep <code>index.html</code> next to its <code>sprites/</code> and <code>audio/</code> folders. For full audio, serve it locally (see the README).</p>
+    <button type="button" id="file-proto-dismiss">OK</button>
+  </div>
+
+  <div id="screen">
+    <div id="bg"></div>
+
+    <div id="stats">
+      <div class="meter-outer">
+        <div id="meter-fill"></div>
+      </div>
+      <div id="snum">5</div>
+    </div>
+
+    <div id="char-wrap">
+      <img id="char-sprite" alt="Giuseppi Mezzoalto">
+    </div>
+
+    <div id="nametag"><span>Giuseppi Mezzoalto</span><br><span id="rank-label" style="font:700 10px/1.3 'Comic Sans MS',cursive;color:#aaaaaa;text-shadow:1px 1px 0 #000;">Stranger</span></div>
+
+    <div id="bubble">
+      <div id="btxt"></div>
+      <div id="abtn">A</div>
+    </div>
+
+    <div id="pbar">
+      <div id="pframe">
+        <div id="pface">
+          <img src="sprites/player.png" alt="Player">
+        </div>
+      </div>
+      <div id="ptxt-wrap">
+        <div id="ai-input-row">
+          <input id="ai-input" type="text" maxlength="200" placeholder="Say something to Giuseppi..." autocomplete="off" spellcheck="false">
+          <button id="ai-send" type="button">▶</button>
+        </div>
+        <div id="ptxt">&nbsp;</div>
+      </div>
+    </div>
+
+    <div id="startscr">
+      <h1>THE SIMS: BUSTIN' OUT<br><em>Giuseppi Mezzoalto</em></h1>
+      <p>Paste a Groq API key to talk to Giuseppi.</p>
+      <input id="key-input" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+      <p id="key-help">Get a free key at console.groq.com/keys. It is kept in memory only for this tab &mdash; never saved to disk or sent anywhere but Groq.</p>
+      <button id="startbtn" type="button">► START</button>
+    </div>
+
+    <audio id="bgm" src="audio/bgm.mp3" preload="auto" loop></audio>
+    <audio id="sfx-tick" src="audio/neutral.wav" preload="auto"></audio>
+    <audio id="sfx-neutral"  src="audio/neutral.wav"  preload="auto"></audio>
+    <audio id="sfx-happy"    src="audio/happy.wav"     preload="auto"></audio>
+    <audio id="sfx-pleased"  src="audio/greeting.wav"  preload="auto"></audio>
+    <audio id="sfx-greeting" src="audio/greeting2.wav" preload="auto"></audio>
+    <audio id="sfx-annoyed"  src="audio/annoyed.wav"   preload="auto"></audio>
+    <audio id="sfx-pissed"   src="audio/pissed.wav"    preload="auto"></audio>
+    <audio id="sfx-shocked"  src="audio/shocked.wav"   preload="auto"></audio>
+    <audio id="sfx-shocked2" src="audio/shocked2.wav"  preload="auto"></audio>
+    <div id="cooldown-overlay" style="display:none;position:absolute;inset:0;z-index:40;pointer-events:all;">
+      <div id="cooldown-msg" style="position:absolute;bottom:170px;left:50%;transform:translateX(-50%);background:rgba(180,0,0,.92);border:3px solid #ff4444;border-radius:8px;padding:10px 18px;color:#fff;font:700 14px/1.5 'Comic Sans MS','Comic Sans',cursive;text-align:center;white-space:nowrap;text-shadow:1px 1px 0 #000;">He needs to cool down... <span id="cooldown-timer">30</span>s</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const screen = document.getElementById('screen');
+      const btxt = document.getElementById('btxt');
+      const ptxt = document.getElementById('ptxt');
+      const startScr = document.getElementById('startscr');
+      const startBtn = document.getElementById('startbtn');
+      const charSprite = document.getElementById('char-sprite');
+      const bgm = document.getElementById('bgm');
+
+      const EMOTION_FILES = {
+        neutral: ['sprites/neutral.png'],
+        happy: ['sprites/happy.png', 'sprites/pleased.png'],
+        pleased: ['sprites/pleased.png', 'sprites/happy.png'],
+        annoyed: ['sprites/annoyed.png', 'sprites/pissed.png'],
+        pissed: ['sprites/pissed.png', 'sprites/annoyed.png'],
+        shocked: ['sprites/shocked.png'],
+        unsure: ['sprites/unsure.png', 'sprites/neutral.png'],
+        sad: ['sprites/unsure.png', 'sprites/neutral.png'],
+      };
+
+      const SPRITE_ALIASES = {
+        smirk: 'pleased',
+        laugh: 'happy',
+        angry: 'pissed',
+        surprised: 'shocked',
+        curious: 'unsure',
+        mean: 'pissed',
+      };
+
+      // ── Emotion sound cues ──────────────────────────────────────────────
+      const EMOTION_SFX = {
+        neutral: ['sfx-neutral'],
+        happy:   ['sfx-happy'],
+        pleased: ['sfx-pleased', 'sfx-greeting'],
+        annoyed: ['sfx-annoyed'],
+        pissed:  ['sfx-pissed'],
+        shocked: ['sfx-shocked', 'sfx-shocked2'],
+        unsure:  ['sfx-neutral'],
+        sad:     ['sfx-neutral'],
+      };
+      function _playSfxId(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.currentTime = 0; el.volume = 0.82;
+        el.play().catch(() => {});
+      }
+      // Play a random sound cue matching the resolved emotion.
+      function playEmotionSfx(resolvedEmotionKey) {
+        const ids = EMOTION_SFX[resolvedEmotionKey] || EMOTION_SFX.neutral;
+        _playSfxId(ids[Math.floor(Math.random() * ids.length)]);
+      }
+
+      // ── Mood meter ───────────────────────────────────────────────────────
+      const EMOTION_MOOD_DELTA = {
+        pleased: +1, happy: +2, neutral: 0, unsure: 0,
+        sad: -1, annoyed: -1, shocked: 0, pissed: -2,
+      };
+      let mood = 5;
+      function updateMeter() {
+        const pct = (mood / 10) * 100;
+        const fill = document.getElementById('meter-fill');
+        const snum = document.getElementById('snum');
+        if (!fill) return;
+        fill.style.height = pct + '%';
+        if (mood >= 7)      fill.style.background = '#22ee66';
+        else if (mood >= 4) fill.style.background = '#22cc55';
+        else if (mood >= 2) fill.style.background = '#dd8800';
+        else                fill.style.background = '#ee2222';
+        snum.textContent = mood;
+      }
+
+      // ── Cooldown ─────────────────────────────────────────────────────────
+      let cooldownActive = false;
+      function startCooldown() {
+        if (cooldownActive) return;
+        cooldownActive = true;
+        setEmotion('pissed');
+        const overlay = document.getElementById('cooldown-overlay');
+        const timerEl = document.getElementById('cooldown-timer');
+        overlay.style.display = 'block';
+        screen.style.pointerEvents = 'none';
+        overlay.style.pointerEvents = 'all';
+        let secs = 30;
+        timerEl.textContent = secs;
+        const iv = setInterval(() => {
+          secs--;
+          timerEl.textContent = secs;
+          if (secs <= 0) {
+            clearInterval(iv);
+            cooldownActive = false;
+            overlay.style.display = 'none';
+            screen.style.pointerEvents = '';
+            mood = 3; updateMeter();
+            showNode('hub');
+          }
+        }, 1000);
+      }
+
+      // ── Relationship rank ────────────────────────────────────────────────
+      const RANKS = [
+        { min: 0,  label: 'Stranger',  color: '#aaaaaa' },
+        { min: 3,  label: 'Associate', color: '#88bbff' },
+        { min: 6,  label: 'Ally',      color: '#44ff88' },
+        { min: 9,  label: 'Confidant', color: '#ffdd44' },
+      ];
+      let totalMoodEarned = 0; // cumulative positive mood, never decreases
+      let currentRankIdx = 0;
+
+      function getRank(score) {
+        let r = RANKS[0];
+        for (const rank of RANKS) { if (score >= rank.min) r = rank; }
+        return r;
+      }
+
+      function updateRank(delta) {
+        if (delta > 0) totalMoodEarned += delta;
+        const rank = getRank(totalMoodEarned);
+        const newIdx = RANKS.indexOf(rank);
+        if (newIdx > currentRankIdx) {
+          currentRankIdx = newIdx;
+          flashRankUp(rank);
+        }
+        // Update nametag subtitle if present
+        let sub = document.getElementById('rank-label');
+        if (sub) { sub.textContent = rank.label; sub.style.color = rank.color; }
+      }
+
+      function flashRankUp(rank) {
+        // Brief banner showing new rank
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+          'background:rgba(0,0,0,.85);border:3px solid ' + rank.color + ';border-radius:10px;' +
+          'padding:12px 24px;color:' + rank.color + ';font:900 16px/1.4 Comic Sans MS,cursive;' +
+          'text-align:center;z-index:60;pointer-events:none;text-shadow:1px 1px 0 #000;';
+        el.innerHTML = '★ Relationship Rank ★<br>' + rank.label;
+        document.getElementById('screen').appendChild(el);
+        setTimeout(() => el.remove(), 2200);
+      }
+
+      // ── Floating mood signs ───────────────────────────────────────────────
+      function spawnMoodPop(delta) {
+        if (delta === 0) return;
+        const scr = document.getElementById('screen');
+        const el = document.createElement('div');
+        el.className = 'mood-pop ' + (delta > 0 ? 'pos' : 'neg');
+        const count = Math.abs(delta);
+        el.textContent = delta > 0 ? '+'.repeat(count) : '-'.repeat(count);
+        scr.appendChild(el);
+        setTimeout(() => el.remove(), 1200);
+      }
+
+      // ── Screen shake ─────────────────────────────────────────────────────
+      function triggerShake() {
+        const scr = document.getElementById('screen');
+        scr.classList.remove('shaking');
+        void scr.offsetWidth; // reflow to restart
+        scr.classList.add('shaking');
+        setTimeout(() => scr.classList.remove('shaking'), 360);
+      }
+
+      // ── Happy bubble flash ────────────────────────────────────────────────
+      function triggerHappyFlash() {
+        const bub = document.getElementById('bubble');
+        bub.classList.remove('happy-flash');
+        void bub.offsetWidth;
+        bub.classList.add('happy-flash');
+        setTimeout(() => bub.classList.remove('happy-flash'), 520);
+      }
+
+      // ── A button visibility ───────────────────────────────────────────────
+      const abtn = document.getElementById('abtn');
+      function setAbtn(visible) {
+        abtn.classList.toggle('visible', visible);
+      }
+
+      // ── Typing tick (Web Audio beep) ─────────────────────────────────────
+      const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      let _tickCount = 0;
+      function playTick() {
+        _tickCount++;
+        if (_tickCount % 3 !== 0) return;
+        try {
+          const osc = _audioCtx.createOscillator();
+          const gain = _audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(_audioCtx.destination);
+          osc.type = 'square';
+          osc.frequency.value = 520;
+          gain.gain.setValueAtTime(0.06, _audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.045);
+          osc.start(_audioCtx.currentTime);
+          osc.stop(_audioCtx.currentTime + 0.045);
+        } catch(e) {}
+      }
+
+      // Typewriter state: `typing` is true while text is being revealed,
+      // `timer` holds the setInterval id so it can be cancelled on skip/click.
+      const state = {
+        typing: false,
+        timer: null,
+      };
+
+      // ── AI conversation history ─────────────────────────────────────────
+      const AI_SYSTEM = `You are Giuseppi Mezzoalto, a shady street vendor and 
+      "family man" from The Sims: Bustin' Out (GBA game, 2003). You sell goods out of a van, 
+      speak in short punchy sentences with occasional Italian-American slang. 
+      You're charming but threatening, confident, secretive about your past. 
+      You refer to the player as "kid". 
+      Keep replies under 3 sentences. Never break character.
+      At the END of every reply, on a new line, output a JSON tag like: 
+      {"emotion":"neutral"} — choose from: neutral, happy, pleased, annoyed, pissed, shocked, 
+      unsure. Pick the emotion that best fits your reply.`;
+
+      const aiHistory = [];
+
+      // The Groq API key is NEVER hardcoded or persisted. It is supplied by the
+      // player on the start screen and held only in this closure variable for the
+      // lifetime of the tab. Closing/reloading the page clears it.
+      let groqKey = '';
+
+      // Send the player's message to the LLM and return { text, emotion }.
+      // Flow: append the user turn to history -> POST the whole conversation
+      // (system prompt + windowed history) to Groq's OpenAI-compatible endpoint
+      // -> parse the reply's trailing emotion tag -> store the raw reply.
+      async function askGiuseppi(userMsg) {
+        aiHistory.push({ role: 'user', content: userMsg });
+
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + groqKey
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            max_tokens: 200,
+            messages: [
+              { role: 'system', content: AI_SYSTEM },
+              ...aiHistory
+            ]
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || response.status);
+        const raw = (data.choices?.[0]?.message?.content || '...').trim();
+
+        // The model is instructed to end every reply with a JSON tag like
+        // {"emotion":"happy"}. Pull it off the end so we can drive the sprite/mood,
+        // and strip it from the text shown in the speech bubble. Falls back to
+        // 'neutral' if the model omits or malforms the tag.
+        let emotion = 'neutral';
+        let text = raw;
+        const tagMatch = raw.match(/\{\s*"emotion"\s*:\s*"(\w+)"\s*\}\s*$/);
+        if (tagMatch) {
+          emotion = tagMatch[1];
+          text = raw.slice(0, tagMatch.index).trim();
+        }
+
+        // Sliding-window memory: keep the raw reply (tag included) for context,
+        // then cap history at the 12 most recent turns by dropping the oldest
+        // user+assistant pair so the request never grows unbounded.
+        aiHistory.push({ role: 'assistant', content: raw });
+        if (aiHistory.length > 12) aiHistory.splice(0, 2);
+
+        return { text, emotion };
+      }
+
+      function stopTyping() {
+        if (state.timer) clearInterval(state.timer);
+        state.timer = null;
+        state.typing = false;
+      }
+
+      function resolveEmotion(emotion) {
+        const key = SPRITE_ALIASES[emotion] || emotion || 'neutral';
+        return key;
+      }
+
+      function setEmotion(emotion) {
+        const key = resolveEmotion(emotion);
+        const files = EMOTION_FILES[key] || EMOTION_FILES.neutral;
+        let i = 0;
+
+        function tryNext() {
+          if (i >= files.length) {
+            charSprite.removeAttribute('src');
+            return;
+          }
+          const file = files[i++];
+          charSprite.onload = () => { };
+          charSprite.onerror = () => tryNext();
+          charSprite.src = file;
+        }
+
+        tryNext();
+      }
+
+      function typeText(text, done) {
+        stopTyping();
+        setAbtn(false);
+        state.typing = true;
+        let idx = 0;
+        btxt.innerHTML = '';
+        state.timer = setInterval(() => {
+          if (idx >= text.length) {
+            stopTyping();
+            btxt.textContent = text;
+            setAbtn(true);
+            done?.();
+            return;
+          }
+          playTick();
+          btxt.innerHTML = text.slice(0, idx + 1) + '<span class="cur"></span>';
+          idx += 1;
+        }, 26);
+      }
+
+      function showAIResponse(text, emotion) {
+        const _ek = resolveEmotion(emotion || 'neutral');
+        const _delta = EMOTION_MOOD_DELTA[_ek] ?? 0;
+        mood = Math.max(0, Math.min(10, mood + _delta));
+        updateMeter();
+        spawnMoodPop(_delta);
+        updateRank(_delta);
+        if (_delta < 0) triggerShake();
+        if (_delta > 0) triggerHappyFlash();
+        playEmotionSfx(_ek);
+        if (mood === 0) { startCooldown(); return; }
+        setEmotion(emotion || 'neutral');
+        setAbtn(false);
+        typeText(text, () => {
+          setAbtn(true);
+          enableInput();
+        });
+      }
+
+      function showNode(id) { /* kept for intro only */
+        if (id === 'intro') {
+          setEmotion('pleased');
+          playEmotionSfx('pleased');
+          const introText = "Hey hey. I'm Giuseppi Mezzoalto — business man, family guy. You need something, anything at all, I can get it... even if it belongs to someone else. So what's on your mind, kid?";
+          typeText(introText, () => {
+            setAbtn(true);
+            enableInput();
+          });
+        }
+      }
+
+      function playBgm() {
+        bgm.volume = 0.55;
+        bgm.loop = true;
+        bgm.load();
+        const attempt = () => bgm.play().catch(() => { });
+        attempt();
+        setTimeout(attempt, 150);
+        setTimeout(attempt, 600);
+      }
+
+      function disableInput() {
+        const inp = document.getElementById('ai-input');
+        const btn = document.getElementById('ai-send');
+        if (inp) inp.disabled = true;
+        if (btn) btn.disabled = true;
+      }
+
+      function enableInput() {
+        if (cooldownActive) return;
+        const inp = document.getElementById('ai-input');
+        const btn = document.getElementById('ai-send');
+        if (inp) { inp.disabled = false; inp.focus(); }
+        if (btn) btn.disabled = false;
+      }
+
+      async function sendMessage() {
+        const inp = document.getElementById('ai-input');
+        const msg = inp.value.trim();
+        if (!msg) return;
+        inp.value = '';
+        disableInput();
+        setAbtn(false);
+        ptxt.textContent = msg;
+        // Show thinking state
+        btxt.textContent = '...';
+        setEmotion('neutral');
+        try {
+          const { text, emotion } = await askGiuseppi(msg);
+          showAIResponse(text, emotion);
+        } catch(err) {
+          console.error('Giuseppi error:', err);
+          btxt.textContent = "My lawyer says I shouldn't respond to that. (" + err.message + ")";
+          setEmotion('annoyed');
+          enableInput();
+        }
+      }
+
+      // Click to skip typing
+      screen.addEventListener('click', () => {
+        if (startScr.style.display !== 'none') return;
+        if (state.typing) {
+          stopTyping();
+          setAbtn(true);
+        }
+      });
+
+      startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const keyInput = document.getElementById('key-input');
+        const enteredKey = (keyInput?.value || '').trim();
+        if (!enteredKey) {
+          keyInput?.focus();
+          keyInput?.style.setProperty('border-color', '#ff4444');
+          return;
+        }
+        groqKey = enteredKey;
+        keyInput.value = ''; // don't leave it sitting in the DOM
+        if (document.getElementById('file-proto-warn').style.display === 'flex') {
+          document.getElementById('file-proto-warn').style.display = 'none';
+        }
+        startScr.style.display = 'none';
+        disableInput();
+        playBgm();
+        showNode('intro');
+      });
+
+      // Allow Enter in the key field to start
+      document.getElementById('key-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); startBtn.click(); }
+        e.stopPropagation();
+      });
+      document.getElementById('key-input').addEventListener('click', e => e.stopPropagation());
+
+      document.getElementById('ai-send').addEventListener('click', (e) => {
+        e.stopPropagation();
+        sendMessage();
+      });
+
+      document.getElementById('ai-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+        e.stopPropagation();
+      });
+
+      // Prevent input clicks closing overlays
+      document.getElementById('ai-input').addEventListener('click', e => e.stopPropagation());
+
+      const warn = document.getElementById('file-proto-warn');
+      if (location.protocol === 'file:' && warn) {
+        warn.style.display = 'flex';
+        document.getElementById('file-proto-dismiss')?.addEventListener('click', () => {
+          warn.style.display = 'none';
+        });
+      }
+
+      // Initial face
+      setEmotion('pleased');
+    })();
+  </script>
+</body>
+
+</html>
