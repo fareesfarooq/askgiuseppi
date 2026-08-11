@@ -566,7 +566,7 @@
     <audio id="sfx-pleased"  src="audio/greeting.wav"  preload="auto"></audio>
     <audio id="sfx-greeting" src="audio/greeting2.wav" preload="auto"></audio>
     <audio id="sfx-annoyed"  src="audio/annoyed.wav"   preload="auto"></audio>
-    <audio id="sfx-pissed"   src="audio/pissed.wav"    preload="auto"></audio>
+    <audio id="sfx-angry"    src="audio/angry.wav"     preload="auto"></audio>
     <audio id="sfx-shocked"  src="audio/shocked.wav"   preload="auto"></audio>
     <audio id="sfx-shocked2" src="audio/shocked2.wav"  preload="auto"></audio>
     <div id="cooldown-overlay" style="display:none;position:absolute;inset:0;z-index:40;pointer-events:all;">
@@ -588,8 +588,8 @@
         neutral: ['sprites/neutral.png'],
         happy: ['sprites/happy.png', 'sprites/pleased.png'],
         pleased: ['sprites/pleased.png', 'sprites/happy.png'],
-        annoyed: ['sprites/annoyed.png', 'sprites/pissed.png'],
-        pissed: ['sprites/pissed.png', 'sprites/annoyed.png'],
+        annoyed: ['sprites/annoyed.png', 'sprites/angry.png'],
+        angry: ['sprites/angry.png', 'sprites/annoyed.png'],
         shocked: ['sprites/shocked.png'],
         unsure: ['sprites/unsure.png', 'sprites/neutral.png'],
         sad: ['sprites/unsure.png', 'sprites/neutral.png'],
@@ -598,10 +598,10 @@
       const SPRITE_ALIASES = {
         smirk: 'pleased',
         laugh: 'happy',
-        angry: 'pissed',
+        pissed: 'angry',
         surprised: 'shocked',
         curious: 'unsure',
-        mean: 'pissed',
+        mean: 'angry',
       };
 
       // ── Emotion sound cues ──────────────────────────────────────────────
@@ -610,7 +610,7 @@
         happy:   ['sfx-happy'],
         pleased: ['sfx-pleased', 'sfx-greeting'],
         annoyed: ['sfx-annoyed'],
-        pissed:  ['sfx-pissed'],
+        angry:   ['sfx-angry'],
         shocked: ['sfx-shocked', 'sfx-shocked2'],
         unsure:  ['sfx-neutral'],
         sad:     ['sfx-neutral'],
@@ -630,7 +630,7 @@
       // ── Mood meter ───────────────────────────────────────────────────────
       const EMOTION_MOOD_DELTA = {
         pleased: +1, happy: +2, neutral: 0, unsure: 0,
-        sad: -1, annoyed: -1, shocked: 0, pissed: -2,
+        sad: -1, annoyed: -1, shocked: 0, angry: -2,
       };
       let mood = 5;
       function updateMeter() {
@@ -651,7 +651,7 @@
       function startCooldown() {
         if (cooldownActive) return;
         cooldownActive = true;
-        setEmotion('pissed');
+        setEmotion('angry');
         const overlay = document.getElementById('cooldown-overlay');
         const timerEl = document.getElementById('cooldown-timer');
         overlay.style.display = 'block';
@@ -785,7 +785,7 @@
       You refer to the player as "kid". 
       Keep replies under 3 sentences. Never break character.
       At the END of every reply, on a new line, output a JSON tag like: 
-      {"emotion":"neutral"} — choose from: neutral, happy, pleased, annoyed, pissed, shocked, 
+      {"emotion":"neutral"} — choose from: neutral, happy, pleased, annoyed, angry, shocked,
       unsure. Pick the emotion that best fits your reply.`;
 
       const aiHistory = [];

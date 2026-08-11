@@ -16,7 +16,7 @@ This is an **unofficial, non-commercial fan project** inspired by **_The Sims: B
 
 Instead of picking from a menu of pre-written lines, you type free-form messages to an NPC. Each reply is produced by an LLM that stays in character, and the game reacts to the *emotional tone* the model reports:
 
-- Giuseppi's **sprite** swaps to match the emotion (happy, pissed, shocked, unsure, and so on).
+- Giuseppi's **sprite** swaps to match the emotion (happy, angry, shocked, unsure, and so on).
 - A **mood meter** rises and falls, driving screen shake, a happy-flash, and floating `+`/`-` popups.
 - A **relationship rank** (Stranger, Associate, Ally, Confidant) climbs as you earn his goodwill.
 - Push him to zero mood and he storms off for a **cooldown** before he'll talk again.
@@ -28,7 +28,7 @@ It's styled to feel like a Game Boy Advance conversation screen: pixel font, til
 The whole "brain" is a single client-side call flow, no backend:
 
 - **LLM-driven NPC dialogue.** The player's text plus a character system-prompt are sent to the [Groq](https://groq.com) chat-completions API (`llama-3.3-70b-versatile`, an OpenAI-compatible endpoint). The system prompt pins Giuseppi's voice, backstory, and rules (short replies, never break character).
-- **Structured emotion output.** The model is instructed to end every reply with a JSON tag, e.g. `{"emotion":"pissed"}`. The client parses that tag off the end of the response with a regex, uses it to pick the sprite and mood delta, and strips it from the text shown in the speech bubble. If the tag is missing or malformed, it safely falls back to `neutral`.
+- **Structured emotion output.** The model is instructed to end every reply with a JSON tag, e.g. `{"emotion":"angry"}`. The client parses that tag off the end of the response with a regex, uses it to pick the sprite and mood delta, and strips it from the text shown in the speech bubble. If the tag is missing or malformed, it safely falls back to `neutral`.
 - **Sliding-window conversation memory.** Replies are appended to an in-memory history array that is resent on each turn so Giuseppi remembers the conversation. The window is capped at the 12 most recent turns (oldest user+assistant pair dropped) so requests stay bounded in size and cost.
 
 The relevant code lives in [`index.html`](index.html). See `askGiuseppi()` for the API call and emotion parsing, and `showAIResponse()` for how the emotion maps to mood, sprite, and effects.
