@@ -922,6 +922,46 @@
         return { text, emotion };
       }
 
+      // Turn an API failure into something Giuseppi would actually say. The raw
+      // message still goes to the console for debugging; the player never sees
+      // rate-limit jargon or a stack trace in the speech bubble.
+      function inCharacterError(err) {
+        const msg = String(err && err.message || err);
+
+        if (/rate.?limit|429|tokens per (day|minute)|TPD|TPM/i.test(msg)) {
+          // Groq reports the cooldown as "try again in 4m27.8s" or "in 12.5s".
+          const m = msg.match(/try again in (?:(\d+)m)?([\d.]+)s/i);
+          let wait = '';
+          if (m) {
+            const mins = Math.ceil((+(m[1] || 0)) + (+m[2]) / 60);
+            wait = mins > 1 ? ' Gimme ' + mins + ' minutes.' : ' Gimme a minute.';
+          }
+          return {
+            line: "Whoa, whoa, easy kid. Giuseppi's been runnin' his mouth all day and the throat's shot." + wait,
+            emotion: 'annoyed',
+          };
+        }
+
+        if (/invalid api key|401|unauthorized|invalid_api_key/i.test(msg)) {
+          return {
+            line: "My lawyer says I shouldn't respond to that. Come back when your paperwork's in order, kid.",
+            emotion: 'unsure',
+          };
+        }
+
+        if (/failed to fetch|networkerror|load failed|err_internet/i.test(msg)) {
+          return {
+            line: "I can't hear ya over the engine, kid. Check your line and try me again.",
+            emotion: 'unsure',
+          };
+        }
+
+        return {
+          line: "Somethin' went sideways and Giuseppi don't discuss sideways. Try me again.",
+          emotion: 'annoyed',
+        };
+      }
+
       function stopTyping() {
         if (state.timer) clearInterval(state.timer);
         state.timer = null;
@@ -1045,8 +1085,9 @@
           showAIResponse(text, emotion);
         } catch(err) {
           console.error('Giuseppi error:', err);
-          btxt.textContent = "My lawyer says I shouldn't respond to that. (" + err.message + ")";
-          setEmotion('annoyed');
+          const { line, emotion } = inCharacterError(err);
+          btxt.textContent = line;
+          setEmotion(emotion);
           enableInput();
         }
       }
