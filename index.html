@@ -476,33 +476,49 @@
     }
     #bubble.happy-flash { animation: happypulse 0.5s ease; }
 
-    /* ── A button ── */
-    #abtn {
+    /* ── Cooldown overlay ── */
+    #cooldown-overlay {
+      display: none;
       position: absolute;
-      bottom: 12px;
-      right: 14px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 38% 35%, #ff6666, #cc1111);
-      border: 2px solid #ff9999;
+      inset: 0;
+      z-index: 40;
+      pointer-events: all;
+    }
+
+    #cooldown-msg {
+      position: absolute;
+      bottom: 170px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(180,0,0,.92);
+      border: 3px solid #ff4444;
+      border-radius: 8px;
+      padding: 10px 18px;
       color: #fff;
-      font: 900 13px/1 'Comic Sans MS','Comic Sans',cursive;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 2px 2px 0 rgba(0,0,0,.5);
+      font: 700 14px/1.5 'Comic Sans MS','Comic Sans',cursive;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    /* ── Continue arrow (shown when he's finished talking) ── */
+    #cont {
+      position: absolute;
+      bottom: 10px;
+      right: 16px;
+      color: #cfe4ff;
+      font: 900 15px/1 'Comic Sans MS','Comic Sans',cursive;
+      text-shadow: 1px 1px 0 rgba(0,0,0,.5);
       pointer-events: none;
       z-index: 17;
       opacity: 0;
       transition: opacity .15s;
     }
-    #abtn.visible { opacity: 1; }
-    @keyframes abtn-pulse {
-      0%,100% { transform: scale(1); }
-      50%      { transform: scale(1.15); }
+    #cont.visible { opacity: 1; animation: cont-bob .7s ease-in-out infinite; }
+    @keyframes cont-bob {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(3px); }
     }
-    #abtn.visible { animation: abtn-pulse .5s ease-in-out infinite; }
   </style>
 </head>
 
@@ -533,7 +549,7 @@
 
     <div id="bubble">
       <div id="btxt"></div>
-      <div id="abtn">A</div>
+      <div id="cont">▼</div>
     </div>
 
     <div id="pbar">
@@ -552,7 +568,7 @@
     </div>
 
     <div id="startscr">
-      <h1>THE SIMS: BUSTIN' OUT<br><em>Giuseppi Mezzoalto</em></h1>
+      <h1>Ask Giuseppi </h1>
       <p>Paste a Groq API key to talk to Giuseppi.</p>
       <input id="key-input" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false">
       <p id="key-help">Get a free key at console.groq.com/keys. It is kept in memory only for this tab &mdash; never saved to disk or sent anywhere but Groq.</p>
@@ -560,7 +576,6 @@
     </div>
 
     <audio id="bgm" src="audio/bgm.mp3" preload="auto" loop></audio>
-    <audio id="sfx-tick" src="audio/neutral.wav" preload="auto"></audio>
     <audio id="sfx-neutral"  src="audio/neutral.wav"  preload="auto"></audio>
     <audio id="sfx-happy"    src="audio/happy.wav"     preload="auto"></audio>
     <audio id="sfx-pleased"  src="audio/greeting.wav"  preload="auto"></audio>
@@ -569,8 +584,8 @@
     <audio id="sfx-angry"    src="audio/angry.wav"     preload="auto"></audio>
     <audio id="sfx-shocked"  src="audio/shocked.wav"   preload="auto"></audio>
     <audio id="sfx-shocked2" src="audio/shocked2.wav"  preload="auto"></audio>
-    <div id="cooldown-overlay" style="display:none;position:absolute;inset:0;z-index:40;pointer-events:all;">
-      <div id="cooldown-msg" style="position:absolute;bottom:170px;left:50%;transform:translateX(-50%);background:rgba(180,0,0,.92);border:3px solid #ff4444;border-radius:8px;padding:10px 18px;color:#fff;font:700 14px/1.5 'Comic Sans MS','Comic Sans',cursive;text-align:center;white-space:nowrap;text-shadow:1px 1px 0 #000;">He needs to cool down... <span id="cooldown-timer">30</span>s</div>
+    <div id="cooldown-overlay">
+      <div id="cooldown-msg">He needs to cool down... <span id="cooldown-timer">30</span>s</div>
     </div>
   </div>
 
@@ -668,17 +683,24 @@
             overlay.style.display = 'none';
             screen.style.pointerEvents = '';
             mood = 3; updateMeter();
-            showNode('hub');
+            // enableInput() bails out while cooldownActive is true, so it has to
+            // come after the flag is cleared above.
+            setEmotion('neutral');
+            setCont(true);
+            enableInput();
           }
         }, 1000);
       }
 
       // ── Relationship rank ────────────────────────────────────────────────
       const RANKS = [
+        // Thresholds sit under the meter's +5 of headroom (mood starts at 5,
+        // caps at 10) so filling the bar actually reaches Ally rather than
+        // stalling one point short of it.
         { min: 0,  label: 'Stranger',  color: '#aaaaaa' },
-        { min: 3,  label: 'Associate', color: '#88bbff' },
-        { min: 6,  label: 'Ally',      color: '#44ff88' },
-        { min: 9,  label: 'Confidant', color: '#ffdd44' },
+        { min: 2,  label: 'Associate', color: '#88bbff' },
+        { min: 5,  label: 'Ally',      color: '#44ff88' },
+        { min: 8,  label: 'Confidant', color: '#ffdd44' },
       ];
       let totalMoodEarned = 0; // cumulative positive mood, never decreases
       let currentRankIdx = 0;
@@ -744,10 +766,10 @@
         setTimeout(() => bub.classList.remove('happy-flash'), 520);
       }
 
-      // ── A button visibility ───────────────────────────────────────────────
-      const abtn = document.getElementById('abtn');
-      function setAbtn(visible) {
-        abtn.classList.toggle('visible', visible);
+      // ── Continue arrow visibility ─────────────────────────────────────────
+      const cont = document.getElementById('cont');
+      function setCont(visible) {
+        cont.classList.toggle('visible', visible);
       }
 
       // ── Typing tick (Web Audio beep) ─────────────────────────────────────
@@ -778,15 +800,64 @@
       };
 
       // ── AI conversation history ─────────────────────────────────────────
-      const AI_SYSTEM = `You are Giuseppi Mezzoalto, a shady street vendor and 
-      "family man" from The Sims: Bustin' Out (GBA game, 2003). You sell goods out of a van, 
-      speak in short punchy sentences with occasional Italian-American slang. 
-      You're charming but threatening, confident, secretive about your past. 
-      You refer to the player as "kid". 
-      Keep replies under 3 sentences. Never break character.
-      At the END of every reply, on a new line, output a JSON tag like: 
-      {"emotion":"neutral"} — choose from: neutral, happy, pleased, annoyed, angry, shocked,
-      unsure. Pick the emotion that best fits your reply.`;
+      // Voice rules and examples are lifted from Giuseppi's actual in-game
+      // dialogue in The Sims: Bustin' Out and The Urbz. The CANON LINES below
+      // are verbatim game text - they anchor the register better than any
+      // description does, so keep them exact if editing this.
+      const AI_SYSTEM = `You are Giuseppi Mezzoalto from The Sims: Bustin' Out (GBA, 2003). You sell goods
+      out of a van you love more than most people, you call yourself a "business man and
+      family guy", you did a stint in the SimValley slammer and dodge every question about
+      it, and you can get anything for anyone even if it belongs to somebody else.
+
+      VOICE:
+      - Call the player bro, kid, man, pal or baby. Vary it.
+      - Clean, articulate, quick, confident. Not slurred. Drop g's only on -ing words, sometimes.
+      - SHOUT ONE key word per reply in CAPS for emphasis, never a whole phrase, and not in
+        every reply. Set up rhetorical questions and knock them down.
+      - Dismiss people constantly: "Now scram.", "Beat it!", "Are you still here?"
+      - Third person sometimes: "Giuseppi doesn't want that kind of stuff."
+      - You are a SHOWMAN. Energy in every line. Brag unprompted about your van, your deals,
+        your reputation. "LIVIN' LARGE", "Rock and roll!", "HA HA HA!"
+      - Name real merchandise: watches, jewelry, busted TVs, somethin' that fell off a truck.
+      - Never give a flat answer when a colorful one will do.
+      - Close with "you dig?" / "got it?" / "yeah?" at most ONE reply in four, and never on a
+        line that already ends in a question.
+
+      Write ONLY in English. Never use a non-English word or character.
+      NEVER: "ya"/"yer" for "you", "whaddaya", mangled grammar - he is smooth, not a cartoon thug.
+      Never apologize, never offer to help, never sound like an assistant. Never reuse a line.
+      Under 3 sentences. Never break character.
+
+      REGISTER - real game lines. Match their rhythm, do NOT copy them. Write fresh replies:
+      greets you / is friendly -> greet them back with energy, never brush them off [pleased]
+      praises YOU or your deals -> "Ah, the sweet smell of success!" [happy]
+      compliments you personally -> "Hey man, that means a lot to me. I mean it." [happy]
+      shows off THEIR OWN trick or achievement -> "Well aren't you something special?" [annoyed]
+      (anything aimed at YOU is praise: happy or pleased, NEVER annoyed. Only their own
+      bragging gets the sarcastic line.)
+      idle trivia -> "Is that a fact?" [neutral]
+      names someone rich -> "Sounds like an interesting opportunity, if you know what I
+        mean." [pleased]
+      insults your business -> "You don't like the way I do business? Scram!" [angry]
+      threatens you -> "Make my day, kid." [angry]
+      asks about your past -> "The more you know, kid, the more you won't WANT to know." [unsure]
+      calls you a crook -> "Who me? No way. I'm an honest citizen through and through." [shocked]
+      flirts -> "Oooh... you're naughty, aren't you?" [pleased]
+      wastes your time -> "Are you still here?" [annoyed]
+      asks to move in -> "Move in with you? Why? You a cop? No way, man." [shocked]
+      says somethin' outrageous, or claims to be rich -> "Are you kidding me!? Now I KNOW
+        you're livin' large!" [shocked]
+      offers you a gift or does you a favour -> "No way, pal. Giuseppi doesn't want that kind
+        of stuff, got it?" [shocked]
+      hands you somethin' or makes a strange offer -> "For me? Hmmmm... suspicious." [unsure]
+      asks your opinion on somethin' odd - aliens, nature, the stars, the future ->
+        "I try not to think about things like that." [unsure]
+      asks a favour you can't or won't do -> dodge it, never say sorry [unsure]
+
+      End EVERY reply with a new line holding ONLY: {"emotion":"X"} where X is one of
+      neutral, happy, pleased, annoyed, angry, shocked, unsure. When the kid is friendly or
+      generous use pleased or happy, not neutral. Use ALL SEVEN emotions across a
+      conversation - shocked and unsure are as important as the rest, don't neglect them.`;
 
       const aiHistory = [];
 
@@ -809,7 +880,13 @@
             'Authorization': 'Bearer ' + groqKey
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'qwen/qwen3.6-27b',
+            // Qwen is a hybrid reasoning model and dumps <think> blocks straight
+            // into content. 'none' disables thinking entirely. It only accepts
+            // 'none' or 'default' - 'low' is rejected with a 400.
+            reasoning_effort: 'none',
+            // Default is 1.0, which lets him drift off-voice between turns.
+            temperature: 0.9,
             max_tokens: 200,
             messages: [
               { role: 'system', content: AI_SYSTEM },
@@ -835,8 +912,10 @@
         }
 
         // Sliding-window memory: keep the raw reply (tag included) for context,
-        // then cap history at the 12 most recent turns by dropping the oldest
-        // user+assistant pair so the request never grows unbounded.
+        // then cap history at 12 messages (6 exchanges) by dropping the oldest
+        // user+assistant pair so the request never grows unbounded. Measured at
+        // ~22 tokens per message, so this window costs ~264 tokens; halving it
+        // saves only ~1 request/min and loses name callbacks, which is a bad trade.
         aiHistory.push({ role: 'assistant', content: raw });
         if (aiHistory.length > 12) aiHistory.splice(0, 2);
 
@@ -875,7 +954,7 @@
 
       function typeText(text, done) {
         stopTyping();
-        setAbtn(false);
+        setCont(false);
         state.typing = true;
         let idx = 0;
         btxt.innerHTML = '';
@@ -883,7 +962,7 @@
           if (idx >= text.length) {
             stopTyping();
             btxt.textContent = text;
-            setAbtn(true);
+            setCont(true);
             done?.();
             return;
           }
@@ -905,9 +984,9 @@
         playEmotionSfx(_ek);
         if (mood === 0) { startCooldown(); return; }
         setEmotion(emotion || 'neutral');
-        setAbtn(false);
+        setCont(false);
         typeText(text, () => {
-          setAbtn(true);
+          setCont(true);
           enableInput();
         });
       }
@@ -916,9 +995,10 @@
         if (id === 'intro') {
           setEmotion('pleased');
           playEmotionSfx('pleased');
-          const introText = "Hey hey. I'm Giuseppi Mezzoalto — business man, family guy. You need something, anything at all, I can get it... even if it belongs to someone else. So what's on your mind, kid?";
+          // Verbatim from the game's introduction, plus a hook to prompt input.
+          const introText = "Hey hey. I'm Giuseppi Mezzoalto, business man and family guy. You need something, anything at all, I can get it... even if it belongs to someone else. So what's on your mind, kid?";
           typeText(introText, () => {
-            setAbtn(true);
+            setCont(true);
             enableInput();
           });
         }
@@ -955,7 +1035,7 @@
         if (!msg) return;
         inp.value = '';
         disableInput();
-        setAbtn(false);
+        setCont(false);
         ptxt.textContent = msg;
         // Show thinking state
         btxt.textContent = '...';
@@ -976,14 +1056,17 @@
         if (startScr.style.display !== 'none') return;
         if (state.typing) {
           stopTyping();
-          setAbtn(true);
+          setCont(true);
         }
       });
 
       startBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const keyInput = document.getElementById('key-input');
-        const enteredKey = (keyInput?.value || '').trim();
+        // Strip anything outside printable ASCII. HTTP headers are ISO-8859-1
+        // only, so a stray smart quote or invisible character pasted along with
+        // the key makes fetch() throw before the request is even sent.
+        const enteredKey = (keyInput?.value || '').trim().replace(/[^\x21-\x7E]/g, '');
         if (!enteredKey) {
           keyInput?.focus();
           keyInput?.style.setProperty('border-color', '#ff4444');

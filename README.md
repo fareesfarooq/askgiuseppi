@@ -27,9 +27,9 @@ It's styled to feel like a Game Boy Advance conversation screen: pixel font, til
 
 The whole "brain" is a single client-side call flow, no backend:
 
-- **LLM-driven NPC dialogue.** The player's text plus a character system-prompt are sent to the [Groq](https://groq.com) chat-completions API (`llama-3.3-70b-versatile`, an OpenAI-compatible endpoint). The system prompt pins Giuseppi's voice, backstory, and rules (short replies, never break character).
+- **LLM-driven NPC dialogue.** The player's text plus a character system-prompt are sent to the [Groq](https://groq.com) chat-completions API (`qwen/qwen3.6-27b`, an OpenAI-compatible endpoint). The system prompt pins Giuseppi's voice, backstory, and rules (short replies, never break character), and is anchored on real lines of his dialogue from the source games.
 - **Structured emotion output.** The model is instructed to end every reply with a JSON tag, e.g. `{"emotion":"angry"}`. The client parses that tag off the end of the response with a regex, uses it to pick the sprite and mood delta, and strips it from the text shown in the speech bubble. If the tag is missing or malformed, it safely falls back to `neutral`.
-- **Sliding-window conversation memory.** Replies are appended to an in-memory history array that is resent on each turn so Giuseppi remembers the conversation. The window is capped at the 12 most recent turns (oldest user+assistant pair dropped) so requests stay bounded in size and cost.
+- **Sliding-window conversation memory.** Replies are appended to an in-memory history array that is resent on each turn so Giuseppi remembers the conversation. The window is capped at 12 messages — 6 exchanges — with the oldest user+assistant pair dropped, so requests stay bounded in size and cost.
 
 The relevant code lives in [`index.html`](index.html). See `askGiuseppi()` for the API call and emotion parsing, and `showAIResponse()` for how the emotion maps to mood, sprite, and effects.
 
