@@ -583,7 +583,7 @@
     <audio id="sfx-annoyed"  src="audio/annoyed.wav"   preload="auto"></audio>
     <audio id="sfx-angry"    src="audio/angry.wav"     preload="auto"></audio>
     <audio id="sfx-shocked"  src="audio/shocked.wav"   preload="auto"></audio>
-    <audio id="sfx-shocked2" src="audio/shocked2.wav"  preload="auto"></audio>
+    <audio id="sfx-confused" src="audio/confused.wav"  preload="auto"></audio>
     <div id="cooldown-overlay">
       <div id="cooldown-msg">He needs to cool down... <span id="cooldown-timer">30</span>s</div>
     </div>
@@ -606,8 +606,8 @@
         annoyed: ['sprites/annoyed.png', 'sprites/angry.png'],
         angry: ['sprites/angry.png', 'sprites/annoyed.png'],
         shocked: ['sprites/shocked.png'],
-        unsure: ['sprites/unsure.png', 'sprites/neutral.png'],
-        sad: ['sprites/unsure.png', 'sprites/neutral.png'],
+        confused: ['sprites/confused.png', 'sprites/neutral.png'],
+        sad: ['sprites/confused.png', 'sprites/neutral.png'],
       };
 
       const SPRITE_ALIASES = {
@@ -615,7 +615,9 @@
         laugh: 'happy',
         pissed: 'angry',
         surprised: 'shocked',
-        curious: 'unsure',
+        curious: 'confused',
+        unsure: 'confused',   // the tag was called 'unsure' before the rename
+        puzzled: 'confused',
         mean: 'angry',
       };
 
@@ -626,8 +628,8 @@
         pleased: ['sfx-pleased', 'sfx-greeting'],
         annoyed: ['sfx-annoyed'],
         angry:   ['sfx-angry'],
-        shocked: ['sfx-shocked', 'sfx-shocked2'],
-        unsure:  ['sfx-neutral'],
+        shocked: ['sfx-shocked'],
+        confused: ['sfx-confused'],
         sad:     ['sfx-neutral'],
       };
       function _playSfxId(id) {
@@ -644,7 +646,7 @@
 
       // ── Mood meter ───────────────────────────────────────────────────────
       const EMOTION_MOOD_DELTA = {
-        pleased: +1, happy: +2, neutral: 0, unsure: 0,
+        pleased: +1, happy: +2, neutral: 0, confused: 0,
         sad: -1, annoyed: -1, shocked: 0, angry: -2,
       };
       let mood = 5;
@@ -840,7 +842,7 @@
         mean." [pleased]
       insults your business -> "You don't like the way I do business? Scram!" [angry]
       threatens you -> "Make my day, kid." [angry]
-      asks about your past -> "The more you know, kid, the more you won't WANT to know." [unsure]
+      asks about your past -> "The more you know, kid, the more you won't WANT to know." [confused]
       calls you a crook -> "Who me? No way. I'm an honest citizen through and through." [shocked]
       flirts -> "Oooh... you're naughty, aren't you?" [pleased]
       wastes your time -> "Are you still here?" [annoyed]
@@ -849,15 +851,25 @@
         you're livin' large!" [shocked]
       offers you a gift or does you a favour -> "No way, pal. Giuseppi doesn't want that kind
         of stuff, got it?" [shocked]
-      hands you somethin' or makes a strange offer -> "For me? Hmmmm... suspicious." [unsure]
+      asks you somethin' cryptic or talks in riddles -> "For me? Hmmmm... suspicious." [confused]
       asks your opinion on somethin' odd - aliens, nature, the stars, the future ->
-        "I try not to think about things like that." [unsure]
-      asks a favour you can't or won't do -> dodge it, never say sorry [unsure]
+        "I try not to think about things like that." [confused]
+      asks a favour you can't or won't do -> dodge it, never say sorry [confused]
+      says somethin' that makes no sense to you -> "Run that by me again, kid?" [confused]
+      uses a word or a reference you don't know -> play dumb, steer it back to business [confused]
+
+      CONFUSED vs SHOCKED - do not mix these two up:
+      - "confused" is when the kid LOSES you. Nonsense, riddles, abstract questions about
+        space or nature, a weird no-questions-asked offer, or when you're playin' dumb
+        about your own record. You're squintin' at him, not reelin'.
+      - "shocked" is when somethin' KNOCKS YOU BACK. A straight accusation, a wild claim
+        about money, a gift you'd never accept, or a proposal you'd never take. You're
+        genuinely thrown, not puzzled.
 
       End EVERY reply with a new line holding ONLY: {"emotion":"X"} where X is one of
-      neutral, happy, pleased, annoyed, angry, shocked, unsure. When the kid is friendly or
+      neutral, happy, pleased, annoyed, angry, shocked, confused. When the kid is friendly or
       generous use pleased or happy, not neutral. Use ALL SEVEN emotions across a
-      conversation - shocked and unsure are as important as the rest, don't neglect them.`;
+      conversation - shocked and confused are as important as the rest, don't neglect them.`;
 
       const aiHistory = [];
 
@@ -945,14 +957,14 @@
         if (/invalid api key|401|unauthorized|invalid_api_key/i.test(msg)) {
           return {
             line: "My lawyer says I shouldn't respond to that. Come back when your paperwork's in order, kid.",
-            emotion: 'unsure',
+            emotion: 'confused',
           };
         }
 
         if (/failed to fetch|networkerror|load failed|err_internet/i.test(msg)) {
           return {
             line: "I can't hear ya over the engine, kid. Check your line and try me again.",
-            emotion: 'unsure',
+            emotion: 'confused',
           };
         }
 
